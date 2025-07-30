@@ -8,19 +8,22 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.android.pokekmp.mvi.PokemonIntent
+import com.android.pokekmp.mvi.Event
+import com.android.pokekmp.mvi.PokemonViewModel
+import org.koin.android.ext.android.inject
+import org.koin.java.KoinJavaComponent.inject
+import kotlin.getValue
 
 @Composable
-fun PokemonScreen(viewModel: PokemonAndroidViewModel) {
-    val state by viewModel.state.collectAsState()
+fun PokemonScreen() {
+    val viewModel: PokemonViewModel by inject(PokemonViewModel::class.java)
+    val state = viewModel.viewState.value
 
     LaunchedEffect(Unit) {
-        viewModel.onIntent(PokemonIntent.LoadPokemon)
+        viewModel.setEvent(Event.LoadPokemon)
     }
 
     when {

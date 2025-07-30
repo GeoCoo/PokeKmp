@@ -1,42 +1,53 @@
 package com.android.pokekmp.mvi
 
+import androidx.lifecycle.viewModelScope
+import com.android.pokekmp.mvi.Effect.ShowError
+import com.android.pokekmp.mvi.Event.LoadPokemon
 import com.android.pokekmp.useCase.GetPokemonListUseCase
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-class PokemonViewModel(
-    private val getPokemonListUseCase: GetPokemonListUseCase
-) {
-    private val _state = MutableStateFlow(PokemonState())
-    val state: StateFlow<PokemonState> = _state.asStateFlow()
+data class State(
+    val isLoading: Boolean = true,
+    val names: List<String> = emptyList(),
+    val error: String? = null
+) : ViewState
 
-    private val viewModelScope = CoroutineScope(Dispatchers.Main)
+// Event
+sealed class Event : ViewEvent {
+    object LoadPokemon : Event()
+}
 
-    fun onIntent(intent: PokemonIntent) {
-        when (intent) {
-            is PokemonIntent.LoadPokemon -> fetchPokemon()
-        }
-    }
+// Effect
+sealed class Effect : ViewSideEffect {
+    data class ShowError(val message: String) : Effect()
+}
 
-    private fun fetchPokemon() {
-        viewModelScope.launch {
-            _state.value = PokemonState(isLoading = true)
-            try {
-                val response = getPokemonListUseCase()
-                _state.value = PokemonState(
-                    isLoading = false,
-                    names = response.results.map { it.name }
-                )
-            } catch (e: Exception) {
-                _state.value = PokemonState(
-                    isLoading = false,
-                    error = e.message
-                )
+class PokemonViewModel(private val getPokemonListUseCase: GetPokemonListUseCase) :
+    MviViewModel<Event, State, Effect>() {
+
+    override fun setInitialState() = State(
+        isLoading = true
+    )
+
+
+    override fun handleEvents(event: Event) {
+        when (event) {
+            is LoadPokemon -> {
+                viewModelScope.launch {
+                    try {
+                        val response = getPokemonListUseCase()
+                        setState {
+                            copy(
+                                isLoading = false,
+                                names = response.results.map { it.name })
+                        }
+                    } catch (e: Exception) {
+                        setState { copy(isLoading = false, error = e.message) }
+                        setEffect { ShowError(e.message ?: "Unknown error") }
+                    }
+                }
             }
         }
     }
+
 }

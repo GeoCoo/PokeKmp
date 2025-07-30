@@ -1,7 +1,6 @@
 package com.android.pokekmp.android
 
 import android.app.Application
-import com.android.pokekmp.android.di.androidModule
 import com.android.pokekmp.di.sharedModule
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.context.startKoin
@@ -11,7 +10,7 @@ class App : Application() {
         super.onCreate()
         startKoin {
             androidContext(this@App)
-            modules(sharedModule,androidModule)
+            modules(sharedModule)
         }
     }
 }
